@@ -1,0 +1,30 @@
+import matplotlib.pyplot as plt
+
+
+def plot_uc1(fuel_stations, boundaries, traffic, circles):
+    fig, ax = plt.subplots()
+    ax.set_aspect('equal')
+
+    circles.plot(ax=ax)
+    traffic.plot(ax=ax)
+    fuel_stations.plot(ax=ax, marker='o', color='red', markersize=5)
+    boundaries.boundary.plot(ax=ax, color='black', edgecolor='black')
+
+    plt.show()
+
+
+def plot_uc3(wir, boundaries):
+    fig, ax = plt.subplots()
+
+    ax.set_aspect('equal')
+
+    wir.plot(column='population', ax=ax, marker='o', markersize=5, legend='true')
+    boundaries.boundary.plot(ax=ax, color='black', edgecolor='black')
+
+    plt.show()
+
+
+def plot_energy_sum(energysum):
+    energysum.plot.line(y=[1], use_index=True)
+
+    plt.show()
