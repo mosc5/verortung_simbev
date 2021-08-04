@@ -65,9 +65,9 @@ def uc1_public_fast(
 
         # sort descending by traffic
         fs = fs.sort_values(by=['traffic'], ascending=False)
-        fs['powerfactor'] = fs['traffic'] / sum(fs['traffic'])
+        fs['conversionfactor'] = fs['traffic'] / sum(fs['traffic'])
 
-        fs['energysum'] = fs['powerfactor'] * energy_sum_overall
+        fs['energysum'] = fs['conversionfactor'] * energy_sum_overall
 
     else:
         print('No fast charging possible, because no fuel station in the area!')
@@ -79,14 +79,55 @@ def uc1_public_fast(
     fs = fs.assign(INDEX=x)
     fs.set_index('INDEX', inplace=True)
 
-    col_select = ['geometry', 'traffic', 'energysum', 'powerfactor']
+    col_select = ['geometry', 'traffic', 'energysum', 'conversionfactor']
     Utility.save(fs, uc_id, col_select)
 
     return fs
 
 
-def uc2_public_slow():
+def uc2_public_slow(
+        public, boundaries,
+        amenities, poi,
+        region, region_key):
+
     print('UC2')
+    uc_id = 'Use_Case_3_Public_Slow'
+    public_in_region_bool = pd.Series(public.geometry.within(boundaries.geometry[region_key]), name='Bool')
+    public_in_region = public.join(public_in_region_bool)
+    pir = public_in_region.loc[public_in_region['Bool'] == 1]   # pir = public in region
+
+    anz_pir = len(pir)
+    data = np.zeros(anz_pir, )
+    es = pd.Series(data, name='energysum')
+    pir = pir.join(es)
+    # pir['energysum'] = np.zeros
+
+    load_power = amenities.iloc[:, 6]
+    load_power.name = 'chargepower_public'
+    load_power = pd.to_numeric(load_power)
+    energy_sum = load_power * 15 / 60  # Ladeleistung in Energie umwandeln
+
+    energy_sum_overall = energy_sum.sum()
+    print(energy_sum_overall, 'kWh got charged at public space in region', region_key)
+
+    # distribution of energysum based on weight of poi
+
+    anz_pir = len(pir)
+
+    #print(pir['amenity'])
+    #print(poi.loc['atm', 5])
+    h = pir['amenity']
+    pir['conversionfactor'] = np.nan
+
+    print(anz_pir)
+    i = 0
+    while i <= anz_pir-1:
+        pir.iloc[i, 7] = float(poi.loc[h[i], 5].replace(',', '.'))
+        i += 1
+
+    pir['energysum'] = pir['conversionfactor'] * energy_sum_overall / anz_pir
+    print(pir)
+    Plots.plot_uc2(pir, region)
 
 
 def uc3_private_home(
@@ -116,12 +157,12 @@ def uc3_private_home(
     energy_sum_overall = energy_sum.sum()
     print(energy_sum_overall, 'kWh got charged at home in region', region_key)
 
-    # distribution of Energysums based on population in 100x100 area
+    # distribution of energysum based on population in 100x100 area
     pop_in_area = sum(hir['population'])
 
-    hir['powerfactor'] = home_in_region['population'] / pop_in_area
+    hir['conversionfactor'] = home_in_region['population'] / pop_in_area
 
-    hir['energysum'] = energy_sum_overall * hir['powerfactor']  # np.nan
+    hir['energysum'] = energy_sum_overall * hir['conversionfactor']  # np.nan
 
     hir = hir.sort_values(by=['population'], ascending=False)
 
@@ -133,7 +174,7 @@ def uc3_private_home(
     x = np.arange(0, len(hir))
     hir = hir.assign(INDEX=x)
     hir.set_index('INDEX', inplace=True)
-    col_select = ['population', 'geom_point', 'geometry', 'energysum', 'powerfactor']
+    col_select = ['population', 'geom_point', 'geometry', 'energysum', 'conversionfactor']
     Utility.save(hir, uc_id, col_select)
 
     return zensus

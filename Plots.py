@@ -5,13 +5,22 @@ def plot_uc1(fuel_stations, boundaries, traffic, circles):
     fig, ax = plt.subplots()
     ax.set_aspect('equal')
 
-    circles.plot(ax=ax)
+    #circles.plot(ax=ax)
     traffic.plot(ax=ax)
     fuel_stations.plot(ax=ax, marker='o', color='red', markersize=5)
     boundaries.boundary.plot(ax=ax, color='black', edgecolor='black')
 
     plt.show()
 
+def plot_uc2(pir, boundaries):
+    fig, ax = plt.subplots()
+
+    ax.set_aspect('equal')
+
+    pir.plot(ax=ax, marker='o', markersize=5, legend='false')
+    boundaries.boundary.plot(ax=ax, color='black', edgecolor='black')
+
+    plt.show()
 
 def plot_uc3(wir, boundaries):
     fig, ax = plt.subplots()
