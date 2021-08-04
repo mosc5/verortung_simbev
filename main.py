@@ -26,7 +26,7 @@ if __name__ == '__main__':
     zensus_data = zensus_data.to_crs(3035)
     zensus = zensus_data.iloc[:, 2:5]
 
-    public = Utility.einlesen_geo(r'C:\Users\Jakob.Wegner\Geopackages\Geopackages\osm_poi_elia.gpkg')
+    public = Utility.einlesen_geo(r'C:\Users\Jakob.Wegner\PYTHON\GEOSim\Data\osm_poi_elia.gpkg')
 
     poi_data = Utility.load_csv(r'C:\Users\Jakob.Wegner\PYTHON\GEOSim\Data\2020-12-02_OSM_POI_Gewichtung.csv')
     poi = pd.DataFrame.from_dict(poi_data)
