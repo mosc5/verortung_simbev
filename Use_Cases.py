@@ -100,9 +100,11 @@ def uc2_public_slow(
     data = np.zeros(anz_pir, )
     es = pd.Series(data, name='energysum')
     pir = pir.join(es)
-    # pir['energysum'] = np.zeros
+    #pir['energysum'] = np.zeros
 
     load_power = amenities.iloc[:, 6]
+    print(load_power)
+    print(type(load_power))
     load_power.name = 'chargepower_public'
     load_power = pd.to_numeric(load_power)
     energy_sum = load_power * 15 / 60  # Ladeleistung in Energie umwandeln
@@ -113,22 +115,52 @@ def uc2_public_slow(
     # distribution of energysum based on weight of poi
 
     anz_pir = len(pir)
+    pir['newindex'] = np.arange(anz_pir)
+    pir.set_index('newindex', inplace=True)
+    data = np.zeros(anz_pir)
+    pir['conversionfactor'] = pd.Series(data)
 
-    #print(pir['amenity'])
-    #print(poi.loc['atm', 5])
-    h = pir['amenity']
-    pir['conversionfactor'] = np.nan
+    a = pir['amenity']
+    l = pir['leisure']
+    s = pir['shop']
+    t = pir['tourism']
 
-    print(anz_pir)
+
+    poia = poi.loc[poi['key'] == 'amenity']
+    print(poia)
+    poil = poi.loc[poi['key'] == 'leisure']
+    print(poil)
+    pois = poi.loc[poi['key'] == 'shop']
+    print(pois)
+
+#Zusammensetzen von POI-Daten und Geopackage
     i = 0
-    while i <= anz_pir-1:
-        pir.iloc[i, 7] = float(poi.loc[h[i], 5].replace(',', '.'))
+    while i <= anz_pir - 1:
+        if a.iloc[i] is not None and a.iloc[i] in poia['value'].values:
+            data = poia.loc[poi['value'] == a.iloc[i], "weight"]
+            pir.iloc[i, 8] = data
+        elif l.iloc[i] is not None and l.iloc[i] in poil['value'].values:
+            data = poil.loc[poi['value'] == l.iloc[i], "weight"]
+            pir.iloc[i, 8] = data
+        elif s.iloc[i] is not None and s.iloc[i] in pois['value'].values:
+            data = pois.loc[poi['value'] == s.iloc[i], "weight"]
+            pir.iloc[i, 8] = data
+        elif t.iloc[i] is not None and t.iloc[i] in poi['value'].values:
+            pir.iloc[i, 8] = 0
+        else:
+            pir.iloc[i, 8] = 0
+            print('Missing OSM Key in Geopackage-Data for UC2')
         i += 1
 
-    pir['energysum'] = pir['conversionfactor'] * energy_sum_overall / anz_pir
+
+    print(pir['conversionfactor'])
+    pir['conversionfactor'] = pd.to_numeric(pir['conversionfactor'], errors='coerce')
     print(pir)
+    pir['energysum'] = pir['conversionfactor'] * energy_sum_overall / anz_pir
+
     Plots.plot_uc2(pir, region)
 
+    print(pir)
 
 def uc3_private_home(
         zensus, boundaries,
@@ -143,8 +175,8 @@ def uc3_private_home(
     home_in_region = zensus.join(home_in_region_bool)
     hir = home_in_region.loc[home_in_region['Bool'] == 1]   # hir = home in region
 
-    anz_wir = len(hir)
-    data = np.zeros(anz_wir, )
+    anz_hir = len(hir)
+    data = np.zeros(anz_hir, )
     es = pd.Series(data, name='energysum')
     hir = hir.join(es)
     hir['energysum'] = np.nan
@@ -180,5 +212,27 @@ def uc3_private_home(
     return zensus
 
 
-def uc4_private_work():
+def uc4_private_work(work, boundaries,
+                     amenities, region, region_key):
+
     print('UC4')
+    uc_id = 'Use_Case_3_Private_Home'
+    work_in_region_bool = pd.Series(work.geometry.within(boundaries.geometry[region_key]), name='Bool')
+    work_in_region = work.join(work_in_region_bool)
+    wir = work_in_region.loc[work_in_region['Bool'] == 1]  # wir = work in region
+
+    anz_wir = len(wir)
+    data = np.zeros(anz_wir, )
+    es = pd.Series(data, name='energysum')
+    wir = wir.join(es)
+    wir['energysum'] = np.nan
+
+    load_power = amenities.iloc[:, 2]
+    load_power.name = 'chargepower_work'
+    load_power = pd.to_numeric(load_power)
+    energy_sum = load_power * 15 / 60  # Ladeleistung in Energie umwandeln
+
+    energy_sum_overall = energy_sum.sum()
+    print(energy_sum_overall, 'kWh got charged at work in region', region_key)
+
+    print(work)

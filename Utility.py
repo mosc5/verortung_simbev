@@ -18,7 +18,7 @@ def load_csv(file, delimiter=';', is_num=False, is_dict=False):
         header = next(csv_reader)  # read header
         for row in csv_reader:
             # get entry (key) of row
-            key = row.pop(0)
+            #key = row.pop(0)
             # convert values to numbers
             if is_num:
                 row = [float(d) for d in row]
