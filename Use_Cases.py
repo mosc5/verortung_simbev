@@ -55,7 +55,7 @@ def uc1_public_fast(
         energy_sum_per_fs = pd.Series(data, name='energysum')
         fs = fs.join(energy_sum_per_fs)
 
-        load_power = amenities.iloc[:, 8]
+        load_power = amenities.loc[:, 'sum UC home']
         load_power.name = 'loadpower_hpc'
         load_power = pd.to_numeric(load_power)
         energy_sum = load_power*15/60  # Ladeleistung in Energie umwandeln
@@ -102,7 +102,7 @@ def uc2_public_slow(
     pir = pir.join(es)
     #pir['energysum'] = np.zeros
 
-    load_power = amenities.iloc[:, 6]
+    load_power = amenities.loc[:, 'sum UC leisure']
     print(load_power)
     print(type(load_power))
     load_power.name = 'chargepower_public'
@@ -124,7 +124,6 @@ def uc2_public_slow(
     l = pir['leisure']
     s = pir['shop']
     t = pir['tourism']
-
 
     poia = poi.loc[poi['key'] == 'amenity']
     print(poia)
@@ -152,6 +151,7 @@ def uc2_public_slow(
             print('Missing OSM Key in Geopackage-Data for UC2')
         i += 1
 
+    # function for energydistribution needs to be inserted here
 
     print(pir['conversionfactor'])
     pir['conversionfactor'] = pd.to_numeric(pir['conversionfactor'], errors='coerce')
@@ -159,6 +159,12 @@ def uc2_public_slow(
     pir['energysum'] = pir['conversionfactor'] * energy_sum_overall / anz_pir
 
     Plots.plot_uc2(pir, region)
+
+    x = np.arange(0, len(pir))
+    pir = pir.assign(INDEX=x)
+    pir.set_index('INDEX', inplace=True)
+    col_select = ['name', 'amenity', 'leisure', 'shop', 'tourism', 'geometry', 'energysum', 'conversionfactor']
+    Utility.save(pir, uc_id, col_select)
 
     print(pir)
 
@@ -181,7 +187,7 @@ def uc3_private_home(
     hir = hir.join(es)
     hir['energysum'] = np.nan
 
-    load_power = amenities.iloc[:, 7]
+    load_power = amenities.loc[:, 'sum UC home']
     load_power.name = 'chargepower_home'
     load_power = pd.to_numeric(load_power)
     energy_sum = load_power * 15 / 60  # Ladeleistung in Energie umwandeln
@@ -216,7 +222,7 @@ def uc4_private_work(work, boundaries,
                      amenities, region, region_key):
 
     print('UC4')
-    uc_id = 'Use_Case_3_Private_Home'
+    uc_id = 'Use_Case_4_Private_Work'
     work_in_region_bool = pd.Series(work.geometry.within(boundaries.geometry[region_key]), name='Bool')
     work_in_region = work.join(work_in_region_bool)
     wir = work_in_region.loc[work_in_region['Bool'] == 1]  # wir = work in region
@@ -227,7 +233,7 @@ def uc4_private_work(work, boundaries,
     wir = wir.join(es)
     wir['energysum'] = np.nan
 
-    load_power = amenities.iloc[:, 2]
+    load_power = amenities.loc[:, 'sum UC work']
     load_power.name = 'chargepower_work'
     load_power = pd.to_numeric(load_power)
     energy_sum = load_power * 15 / 60  # Ladeleistung in Energie umwandeln
@@ -235,4 +241,53 @@ def uc4_private_work(work, boundaries,
     energy_sum_overall = energy_sum.sum()
     print(energy_sum_overall, 'kWh got charged at work in region', region_key)
 
-    print(work)
+    #print(wir)
+
+    # distribution of energysum based on area of Polygon
+
+    anz_wir = len(wir)
+    wir['newindex'] = np.arange(anz_wir)
+    wir.set_index('newindex', inplace=True)
+    data = np.zeros(anz_wir)
+    wir['conversionfactor'] = pd.Series(data)
+
+    wir_retail = wir.loc[wir['landuse'] == 'retail']
+    #print(wir_retail)
+
+    # calculationg the area of polygons
+
+    area = wir['geometry'].area / 10 ** 6
+    sum_area = sum(area)
+    len_area = len(area)
+    print(area)
+
+    i = 0
+    while i <= anz_wir - 1:
+        if 'retail' in wir.iloc[i, 0]:
+            wir.iloc[i, 4] = area[i] / sum_area  # Weight for retail
+
+        elif 'commercial' in wir.iloc[i, 0]:
+            wir.iloc[i, 4] = area[i] / sum_area  # Weight for commercial
+
+        elif 'industrial' in wir.iloc[i, 0]:
+            wir.iloc[i, 4] = area[i] / sum_area  # Weight for industrial
+        else:
+            print('lol')
+
+        i += 1
+
+    wir['energysum'] = wir['conversionfactor'] * energy_sum_overall
+
+    wir['center_geo'] = wir.centroid
+
+    print(sum(wir['energysum']))
+
+    Plots.plot_uc4(wir, region)
+
+    x = np.arange(0, len(wir))
+    wir = wir.assign(INDEX=x)
+    wir.set_index('INDEX', inplace=True)
+    col_select = ['landuse', 'geometry', 'center_geo', 'energysum', 'conversionfactor']
+    Utility.save(wir, uc_id, col_select)
+
+    print(wir)

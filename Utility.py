@@ -1,6 +1,7 @@
 
 import csv
 import geopandas as gpd
+import pandas as pd
 
 
 def einlesen_geo(filename):
@@ -18,7 +19,7 @@ def load_csv(file, delimiter=';', is_num=False, is_dict=False):
         header = next(csv_reader)  # read header
         for row in csv_reader:
             # get entry (key) of row
-            #key = row.pop(0)
+            # key = row.pop(0)
             # convert values to numbers
             if is_num:
                 row = [float(d) for d in row]
@@ -26,10 +27,11 @@ def load_csv(file, delimiter=';', is_num=False, is_dict=False):
             if len(row) == 1:
                 row = row[0]
             # save values
-            if is_dict:
-                data[key] = row
+            # if is_dict:
+            #   data[key] = row
             else:
                 data.append(row)
+        data = pd.DataFrame(data, columns=header)
     return data
 
 
