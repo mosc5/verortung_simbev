@@ -2,16 +2,27 @@
 import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import configparser as cp
+import os
 
 import Use_Cases
 import Utility
 
 # afgsdgadfg
 if __name__ == '__main__':
-    # read input data
-    #fuel_stations = Utility.einlesen_geo(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\fuel_stations.gpkg')
 
-    #anz_fs = len(fuel_stations)
+    # read config file
+
+    #parser = cp.ConfigParser()
+    #configFilePath = r'c:\Users\Jakob.Wegner\PYTHON\verortung_simbev\location_config.cfg'
+    #parser.read(r'c:\Users\Jakob.Wegner\PYTHON\verortung_simbev\location_config.cfg')
+    #print(config)
+    #a = parser.get('region_mode',)
+    #print(a)
+    # read input data
+    fuel_stations = Utility.einlesen_geo(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\fuel_stations.gpkg')
+
+    anz_fs = len(fuel_stations)
 
     boundaries = Utility.einlesen_geo(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\boundaries.gpkg')
 
@@ -19,19 +30,18 @@ if __name__ == '__main__':
     boundaries = boundaries.dissolve(by='ags_0')    # Zusammenfassen der Regionenn mit geleichem AGS
     boundaries = boundaries.to_crs(3035)
 
-    #traffic = Utility.einlesen_geo(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\berlin_verkehr.gpkg')
-    #traffic = traffic.to_crs(3035)  # transforme to reference Coordinate System
+    traffic = Utility.einlesen_geo(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\berlin_verkehr.gpkg')
+    traffic = traffic.to_crs(3035)  # transforme to reference Coordinate System
 
-    #zensus_data = Utility.einlesen_geo(
-    #    r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\destatis_zensus_population_per_ha_filtered.gpkg')
-    #zensus_data = zensus_data.to_crs(3035)
-    #zensus = zensus_data.iloc[:, 2:5]
+    zensus_data = Utility.einlesen_geo(
+        r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\destatis_zensus_population_per_ha_filtered.gpkg')
+    zensus_data = zensus_data.to_crs(3035)
+    zensus = zensus_data.iloc[:, 2:5]
 
-    #public = Utility.einlesen_geo(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\osm_poi_elia.gpkg')
+    public = Utility.einlesen_geo(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\osm_poi_elia.gpkg')
 
-    #poi_data = Utility.load_csv(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\2020-12-02_OSM_POI_Gewichtung.csv')
-    #oi = pd.DataFrame.from_dict(poi_data)
-    #poi = poi.rename(columns={0: 'key', 1: 'value', 2: 'description', 6: 'weight'}, inplace=False)
+    poi_data = Utility.load_csv(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\2020-12-02_OSM_POI_Gewichtung.csv')
+    poi = pd.DataFrame.from_dict(poi_data)
 
     work = Utility.einlesen_geo(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\landuse.gpkg')
 
@@ -45,17 +55,18 @@ if __name__ == '__main__':
 
 
 
-    # Use Case HPC
-    #fs = Use_Cases.uc1_public_fast(fuel_stations, boundaries,
-    #                               amenities, traffic,
-    #                               region, region_key)
-    #pl = Use_Cases.uc3_private_home(zensus, boundaries,
-    #                                amenities, region,
-    #                                region_key)
+    # Start Use Cases
+    fs = Use_Cases.uc1_public_fast(fuel_stations, boundaries,
+                                   amenities, traffic,
+                                   region, region_key)
 
-    #pu = Use_Cases.uc2_public_slow(public, boundaries,
-    #                               amenities, poi,
-    #                               region, region_key)
+    pu = Use_Cases.uc2_public_slow(public, boundaries,
+                                   amenities, poi,
+                                   region, region_key)
+
+    pl = Use_Cases.uc3_private_home(zensus, boundaries,
+                                    amenities, region,
+                                    region_key)
 
     pw = Use_Cases.uc4_private_work(work, boundaries,
                                     amenities, region,

@@ -9,7 +9,7 @@ def uc1_public_fast(
         amenities, traffic_data,
         region, region_key):
 
-    uc_id = 'Use_Case_3_Public_Fast'
+    uc_id = 'Use_Case_1_Public_Fast'
     radius = 900  # radius around fuel station for traffic acquisition
 
     anz_fuel_stations = len(fuel_stations)
@@ -67,17 +67,18 @@ def uc1_public_fast(
         fs = fs.sort_values(by=['traffic'], ascending=False)
         fs['conversionfactor'] = fs['traffic'] / sum(fs['traffic'])
 
-        fs['energysum'] = fs['conversionfactor'] * energy_sum_overall
+        x = np.arange(0, len(fs))
+        fs = fs.assign(INDEX=x)
+        fs.set_index('INDEX', inplace=True)
 
+        fs['energysum'] = Utility.apportion(fs['traffic'], energy_sum_overall)
+        print(sum(fs['energysum']))
+        print(fs)
     else:
         print('No fast charging possible, because no fuel station in the area!')
     if anz_fs != 0:
         Plots.plot_uc1(fs, region,
                        traffic_data, circles)
-
-    x = np.arange(0, len(fs))
-    fs = fs.assign(INDEX=x)
-    fs.set_index('INDEX', inplace=True)
 
     col_select = ['geometry', 'traffic', 'energysum', 'conversionfactor']
     Utility.save(fs, uc_id, col_select)
@@ -91,7 +92,7 @@ def uc2_public_slow(
         region, region_key):
 
     print('UC2')
-    uc_id = 'Use_Case_3_Public_Slow'
+    uc_id = 'Use_Case_2_Public_Slow'
     public_in_region_bool = pd.Series(public.geometry.within(boundaries.geometry[region_key]), name='Bool')
     public_in_region = public.join(public_in_region_bool)
     pir = public_in_region.loc[public_in_region['Bool'] == 1]   # pir = public in region
@@ -125,44 +126,43 @@ def uc2_public_slow(
     s = pir['shop']
     t = pir['tourism']
 
-    poia = poi.loc[poi['key'] == 'amenity']
+    poia = poi.loc[poi['OSM-Key'] == 'amenity']
     print(poia)
-    poil = poi.loc[poi['key'] == 'leisure']
+    poil = poi.loc[poi['OSM-Key'] == 'leisure']
     print(poil)
-    pois = poi.loc[poi['key'] == 'shop']
+    pois = poi.loc[poi['OSM-Key'] == 'shop']
     print(pois)
 
 #Zusammensetzen von POI-Daten und Geopackage
     i = 0
     while i <= anz_pir - 1:
-        if a.iloc[i] is not None and a.iloc[i] in poia['value'].values:
-            data = poia.loc[poi['value'] == a.iloc[i], "weight"]
+        if a.iloc[i] is not None and a.iloc[i] in poia['OSM-Value'].values:
+            data = poia.loc[poi['OSM-Value'] == a.iloc[i], "weight"]
             pir.iloc[i, 8] = data
-        elif l.iloc[i] is not None and l.iloc[i] in poil['value'].values:
-            data = poil.loc[poi['value'] == l.iloc[i], "weight"]
+        elif l.iloc[i] is not None and l.iloc[i] in poil['OSM-Value'].values:
+            data = poil.loc[poi['OSM-Value'] == l.iloc[i], "weight"]
             pir.iloc[i, 8] = data
-        elif s.iloc[i] is not None and s.iloc[i] in pois['value'].values:
-            data = pois.loc[poi['value'] == s.iloc[i], "weight"]
+        elif s.iloc[i] is not None and s.iloc[i] in pois['OSM-Value'].values:
+            data = pois.loc[poi['OSM-Value'] == s.iloc[i], "weight"]
             pir.iloc[i, 8] = data
-        elif t.iloc[i] is not None and t.iloc[i] in poi['value'].values:
+        elif t.iloc[i] is not None and t.iloc[i] in poi['OSM-Value'].values:
             pir.iloc[i, 8] = 0
         else:
             pir.iloc[i, 8] = 0
             print('Missing OSM Key in Geopackage-Data for UC2')
         i += 1
 
-    # function for energydistribution needs to be inserted here
-
     print(pir['conversionfactor'])
     pir['conversionfactor'] = pd.to_numeric(pir['conversionfactor'], errors='coerce')
-    print(pir)
-    pir['energysum'] = pir['conversionfactor'] * energy_sum_overall / anz_pir
-
-    Plots.plot_uc2(pir, region)
 
     x = np.arange(0, len(pir))
     pir = pir.assign(INDEX=x)
     pir.set_index('INDEX', inplace=True)
+
+    pir['energysum'] = Utility.apportion(pir['conversionfactor'], energy_sum_overall)
+
+    Plots.plot_uc2(pir, region)
+
     col_select = ['name', 'amenity', 'leisure', 'shop', 'tourism', 'geometry', 'energysum', 'conversionfactor']
     Utility.save(pir, uc_id, col_select)
 
@@ -173,6 +173,7 @@ def uc3_private_home(
         amenities, region,
         region_key):
 
+    print('UC3')
     uc_id = 'Use_Case_3_Private_Home'
 
     # zensus = zensus.to_crs(3035)
@@ -200,18 +201,19 @@ def uc3_private_home(
 
     hir['conversionfactor'] = home_in_region['population'] / pop_in_area
 
-    hir['energysum'] = energy_sum_overall * hir['conversionfactor']  # np.nan
+    x = np.arange(0, len(hir))
+    hir = hir.assign(INDEX=x)
+    hir.set_index('INDEX', inplace=True)
+
+    #hir['energysum'] = energy_sum_overall * hir['conversionfactor']  # np.nan
+    hir['energysum'] = Utility.apportion(hir['conversionfactor'], energy_sum_overall)
 
     hir = hir.sort_values(by=['population'], ascending=False)
 
     print(hir)
-    print('UC3')
 
     Plots.plot_uc3(hir, region)
 
-    x = np.arange(0, len(hir))
-    hir = hir.assign(INDEX=x)
-    hir.set_index('INDEX', inplace=True)
     col_select = ['population', 'geom_point', 'geometry', 'energysum', 'conversionfactor']
     Utility.save(hir, uc_id, col_select)
 
@@ -264,19 +266,25 @@ def uc4_private_work(work, boundaries,
     i = 0
     while i <= anz_wir - 1:
         if 'retail' in wir.iloc[i, 0]:
-            wir.iloc[i, 4] = area[i] / sum_area  # Weight for retail
+            wir.iloc[i, 4] = 0.8 * area[i] / sum_area  # Weight for retail
 
         elif 'commercial' in wir.iloc[i, 0]:
-            wir.iloc[i, 4] = area[i] / sum_area  # Weight for commercial
+            wir.iloc[i, 4] = 1.25 * area[i] / sum_area  # Weight for commercial
 
         elif 'industrial' in wir.iloc[i, 0]:
-            wir.iloc[i, 4] = area[i] / sum_area  # Weight for industrial
+            wir.iloc[i, 4] = 1 * area[i] / sum_area  # Weight for industrial
         else:
             print('lol')
 
         i += 1
 
-    wir['energysum'] = wir['conversionfactor'] * energy_sum_overall
+    #wir['energysum'] = wir['conversionfactor'] * energy_sum_overall
+    #wir['energysum'] = apportion.(wir['conversionfactor'], energy_sum_overall)
+    x = np.arange(0, len(wir))
+    wir = wir.assign(INDEX=x)
+    wir.set_index('INDEX', inplace=True)
+
+    wir['energysum'] = Utility.apportion(wir['conversionfactor'], energy_sum_overall)
 
     wir['center_geo'] = wir.centroid
 
@@ -284,9 +292,6 @@ def uc4_private_work(work, boundaries,
 
     Plots.plot_uc4(wir, region)
 
-    x = np.arange(0, len(wir))
-    wir = wir.assign(INDEX=x)
-    wir.set_index('INDEX', inplace=True)
     col_select = ['landuse', 'geometry', 'center_geo', 'energysum', 'conversionfactor']
     Utility.save(wir, uc_id, col_select)
 
