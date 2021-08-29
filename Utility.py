@@ -35,12 +35,12 @@ def load_csv(file, delimiter=';', is_num=False, is_dict=False):
 
 
 # save in .csv format
-def save(data, uc, col_select):
+def save(data, uc, col_select, region_key):
 
-    filename = 'output_geo_{}.csv'.format(uc)
+    filename = 'output_geo_{}_region_{}.csv'.format(uc, region_key)
     path = '{}'.format(filename)  # path = '{}\{}'.format(pathlib.Path().resolve(), filename)
     data.to_csv(path, sep=';', columns=col_select, decimal=',', index=True)
-    print('saving {} successful'.format(uc))
+    print('saving {} in region {} successful'.format(uc, region_key))
 
 
 # distribution function
@@ -84,6 +84,6 @@ def apportion(weights, num_portions, cutoff=1):
         i += 1
 
     # assert that all portions have been distributed
-    assert(sum(distribution) == num_portions)
-    print(distribution)
+    # assert(sum(distribution) == num_portions)
+    # print(distribution)
     return distribution

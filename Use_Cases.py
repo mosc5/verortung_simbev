@@ -199,6 +199,8 @@ def uc3_private_home(
     # distribution of energysum based on population in 100x100 area
     pop_in_area = sum(hir['population'])
 
+    hir = hir.sort_values(by=['population'], ascending=False)
+
     hir['conversionfactor'] = home_in_region['population'] / pop_in_area
 
     x = np.arange(0, len(hir))
@@ -207,10 +209,6 @@ def uc3_private_home(
 
     #hir['energysum'] = energy_sum_overall * hir['conversionfactor']  # np.nan
     hir['energysum'] = Utility.apportion(hir['conversionfactor'], energy_sum_overall)
-
-    hir = hir.sort_values(by=['population'], ascending=False)
-
-    print(hir)
 
     Plots.plot_uc3(hir, region)
 
@@ -225,6 +223,7 @@ def uc4_private_work(work, boundaries,
 
     print('UC4')
     uc_id = 'Use_Case_4_Private_Work'
+
     work_in_region_bool = pd.Series(work.geometry.within(boundaries.geometry[region_key]), name='Bool')
     work_in_region = work.join(work_in_region_bool)
     wir = work_in_region.loc[work_in_region['Bool'] == 1]  # wir = work in region
@@ -261,7 +260,6 @@ def uc4_private_work(work, boundaries,
     area = wir['geometry'].area / 10 ** 6
     sum_area = sum(area)
     len_area = len(area)
-    print(area)
 
     i = 0
     while i <= anz_wir - 1:
@@ -274,12 +272,10 @@ def uc4_private_work(work, boundaries,
         elif 'industrial' in wir.iloc[i, 0]:
             wir.iloc[i, 4] = 1 * area[i] / sum_area  # Weight for industrial
         else:
-            print('lol')
+            print('no specification')
 
         i += 1
 
-    #wir['energysum'] = wir['conversionfactor'] * energy_sum_overall
-    #wir['energysum'] = apportion.(wir['conversionfactor'], energy_sum_overall)
     x = np.arange(0, len(wir))
     wir = wir.assign(INDEX=x)
     wir.set_index('INDEX', inplace=True)
@@ -288,11 +284,8 @@ def uc4_private_work(work, boundaries,
 
     wir['center_geo'] = wir.centroid
 
-    print(sum(wir['energysum']))
-
     Plots.plot_uc4(wir, region)
 
     col_select = ['landuse', 'geometry', 'center_geo', 'energysum', 'conversionfactor']
-    Utility.save(wir, uc_id, col_select)
+    Utility.save(wir, uc_id, col_select, region_key)
 
-    print(wir)
