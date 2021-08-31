@@ -24,7 +24,7 @@ def load_csv(file, delimiter=';', is_num=False, is_dict=False):
                 row = [float(d) for d in row]
             # single value in row
             if len(row) == 1:
-                row = row[0]
+               row = row[0]
             # save values
             # if is_dict:
             #   data[key] = row
@@ -50,15 +50,15 @@ def apportion(weights, num_portions, cutoff=1):
         print("cutoff too high")
         cutoff = 1
     if cutoff < 1:
-        cutoff = 1 # would not finish otherwise
+        cutoff = 1  # would not finish otherwise
 
-    assert(sum(weights) != 0) # avoid div0
+    assert(sum(weights) != 0)   # avoid div0
 
     q = num_portions / sum(weights)
     distribution = pd.Series([0 if (w*q) < cutoff else int(w * q) for w in weights])
     remaining = num_portions - sum(distribution)
 
-    assert(remaining >= 0) #  just in case
+    assert(remaining >= 0)  # just in case
 
     # Give remaining portions to bins with biggest fractional remainder.
 
@@ -70,9 +70,9 @@ def apportion(weights, num_portions, cutoff=1):
     indexlist.sort(key=lambda x: weights[x] * q - distribution[x], reverse=True)
 
     # increment bins with biggest remainder
-    i=0
+    i = 0
     while remaining > 0:
-        index = indexlist[i % len(distribution)] # start again after traversing list once
+        index = indexlist[i % len(distribution)]     # start again after traversing list once
         if distribution[index] >= cutoff:
             # already above cutoff: increase by one
             distribution[index] += 1
