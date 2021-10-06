@@ -27,7 +27,7 @@ if __name__ == '__main__':
     uc4_weight_commercial = float(parser.get('uc_params', 'uc4_weight_commercial'))
     uc4_weight_industrial = float(parser.get('uc_params', 'uc4_weight_industrial'))
 
-    region_data = Utility.load_csv(r'C:\Users\Jakob.Wegner\PYTHON\verortung_simbev\Data\regions.csv')
+    region_data = Utility.load_csv(os.path.join('.', 'Data', 'regions_b.csv'))
     region_key = ['']*len(region_data)
     i = 0
     while i < len(region_data):
@@ -74,9 +74,9 @@ if __name__ == '__main__':
         region = gpd.GeoSeries(region)  # format to geoseries, otherwise problems plotting
 
         # Start Use Cases
-        # fs = Use_Cases.uc1_public_fast(fuel_stations, boundaries,
-        #                                amenities, traffic,
-        #                                region, region_key[i], uc1_radius)
+        fs = Use_Cases.uc1_public_fast(fuel_stations, boundaries,
+                                       amenities, traffic,
+                                       region, region_key[i], uc1_radius)
 
         pu = Use_Cases.uc2_public_slow(public, boundaries,
                                        amenities, poi,
